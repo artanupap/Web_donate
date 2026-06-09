@@ -34,25 +34,18 @@ export async function POST(req: NextRequest) {
   await writeFile(path.join(uploadDir, filename), buffer);
   const slipPath = `/uploads/${filename}`;
 
-  // ตรวจสอบสลิปอัตโนมัติ ด้วย Slip2Go
+  // ตรวจสอบสลิป (เก็บผลไว้ใน note แต่ approve เสมอ)
   const slipResult = await verifySlip(Buffer.from(bytes), filename);
 
-  let status = "pending";
+  const status = "approved"; // auto-approve เสมอ ไม่รอแอดมิน
   let autoNote = "";
 
   if (slipResult.verified && slipResult.amount !== undefined) {
-    if (Math.abs(slipResult.amount - amount) <= 1) {
-      // ยอดตรง — อนุมัติอัตโนมัติ
-      status = "approved";
-      autoNote = `ยืนยันอัตโนมัติ: ฿${slipResult.amount} | ${slipResult.transactionId || ""}`;
-    } else {
-      // ยอดไม่ตรง — รอแอดมิน
-      autoNote = `ยอดสลิป ฿${slipResult.amount} ไม่ตรงกับที่แจ้ง ฿${amount} — รอแอดมินตรวจสอบ`;
-    }
-  } else if (!slipResult.success) {
-    autoNote = `ตรวจสลิปไม่สำเร็จ: ${slipResult.error || "ไม่ทราบสาเหตุ"} — รอแอดมินตรวจสอบ`;
+    autoNote = `QR ยืนยัน: ฿${slipResult.amount} | ${slipResult.transactionId || "-"}`;
+  } else if (slipResult.amount !== undefined) {
+    autoNote = `ยอดจากสลิป: ฿${slipResult.amount} (อนุมัติอัตโนมัติ)`;
   } else {
-    autoNote = "อ่าน QR ไม่ได้ — รอแอดมินตรวจสอบ";
+    autoNote = `อนุมัติอัตโนมัติ ฿${amount} (อ่าน QR ไม่ได้)`;
   }
 
   const topup = await prisma.topUpHistory.create({
@@ -92,9 +85,11 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // ไม่ควรถึงจุดนี้แล้ว แต่ fallback ไว้
   return NextResponse.json({
     success: true,
-    autoApproved: false,
-    message: autoNote || "ส่งคำขอแล้ว รอแอดมินตรวจสอบ",
+    autoApproved: true,
+    points,
+    message: `เติมพ้อยสำเร็จ! +${points.toLocaleString()} พ้อย`,
   });
 }
