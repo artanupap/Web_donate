@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import SlipTester from "./SlipTester";
 
 interface Setting { key: string; value: string; }
 
@@ -62,6 +63,7 @@ export default function SettingsPage() {
           {loading ? "กำลังบันทึก..." : "บันทึก"}
         </button>
       </form>
+      <SlipTester />
     </div>
   );
 }

@@ -1,72 +1,88 @@
+import { verifySlipLocal, SlipData } from "./slipVerify";
+
 const API_URL = "https://connect.slip2go.com";
-const SECRET_KEY = process.env.SLIP2GO_SECRET_KEY || "0His9_tDKswvH8Izw2OvM+PgOvF9ehjsvm2YaoM41PA=";
+const SECRET_KEY = process.env.SLIP2GO_SECRET_KEY || "";
 
 export interface SlipResult {
   success: boolean;
   verified: boolean;
   amount?: number;
-  senderName?: string;
-  receiverName?: string;
   transactionId?: string;
-  transactionDate?: string;
-  rawData?: any;
+  sendingBank?: string;
+  sender?: string;
+  receiver?: string;
+  method: "local" | "slip2go" | "failed";
   error?: string;
 }
 
-export async function verifySlip(slipFile: File | Buffer, filename?: string): Promise<SlipResult> {
+export async function verifySlip(
+  imageBuffer: Buffer,
+  filename?: string
+): Promise<SlipResult> {
+  // --- 1. ลอง verify เองก่อน (local QR decode) ---
+  const local = await verifySlipLocal(imageBuffer);
+
+  if (local.verified && local.amount) {
+    return {
+      success: true,
+      verified: true,
+      amount: local.amount,
+      transactionId: local.transactionId,
+      sendingBank: local.sendingBank,
+      sender: local.sender,
+      receiver: local.receiver,
+      method: "local",
+    };
+  }
+
+  // --- 2. Fallback → Slip2Go API ---
+  if (!SECRET_KEY) {
+    return {
+      success: false,
+      verified: false,
+      method: "failed",
+      error: local.error || "QR อ่านไม่ได้ และไม่ได้ตั้ง Slip2Go API key",
+    };
+  }
+
   try {
     const form = new FormData();
-
-    if (slipFile instanceof File) {
-      form.append("files", slipFile, slipFile.name);
-    } else {
-      const blob = new Blob([slipFile.buffer as ArrayBuffer], { type: "image/jpeg" });
-      form.append("files", blob, filename || "slip.jpg");
-    }
+    const blob = new Blob([imageBuffer.buffer as ArrayBuffer], { type: "image/jpeg" });
+    form.append("files", blob, filename || "slip.jpg");
 
     const res = await fetch(`${API_URL}/api/verify-slip/qr-code/info`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${SECRET_KEY}`,
-      },
+      headers: { Authorization: `Bearer ${SECRET_KEY}` },
       body: form,
       signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) {
-      const txt = await res.text();
-      return { success: false, verified: false, error: `API ${res.status}: ${txt}` };
+      return { success: false, verified: false, method: "slip2go", error: `Slip2Go: ${res.status}` };
     }
 
     const data = await res.json();
-
-    // ดึงข้อมูลจาก Slip2Go response
     const slip = data?.data || data;
     const amount = slip?.amount || slip?.transferAmount || slip?.data?.amount;
-    const verified = !!(amount && amount > 0);
+
+    if (!amount) {
+      return { success: false, verified: false, method: "slip2go", error: "Slip2Go: ไม่พบยอดเงิน" };
+    }
 
     return {
       success: true,
-      verified,
-      amount: amount ? parseFloat(amount) : undefined,
-      senderName: slip?.sender?.displayName || slip?.fromDisplayName || slip?.data?.senderName,
-      receiverName: slip?.receiver?.displayName || slip?.toDisplayName || slip?.data?.receiverName,
-      transactionId: slip?.transRef || slip?.transactionId || slip?.data?.transRef,
-      transactionDate: slip?.transDtm || slip?.transactionDate || slip?.data?.transDtm,
-      rawData: data,
+      verified: true,
+      amount: parseFloat(amount),
+      transactionId: slip?.transRef || slip?.transactionId,
+      sendingBank: slip?.sender?.bank,
+      method: "slip2go",
     };
   } catch (e: any) {
-    return { success: false, verified: false, error: e.message };
+    return {
+      success: false,
+      verified: false,
+      method: "failed",
+      error: `Slip2Go error: ${e.message}`,
+    };
   }
-}
-
-export async function getAccountInfo(): Promise<any> {
-  const res = await fetch(`${API_URL}/api/account/info`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${SECRET_KEY}`,
-      "Content-Type": "application/json",
-    },
-  });
-  return res.json();
 }
