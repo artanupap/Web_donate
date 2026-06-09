@@ -144,19 +144,26 @@ end)
 RegisterNetEvent("amulet-shop:playerSpawned")
 AddEventHandler("amulet-shop:playerSpawned", function()
     local src = source
-    -- หน่วงเล็กน้อยให้ player load เสร็จก่อน
+    print("[amulet-shop] playerSpawned received from src:" .. tostring(src))
     SetTimeout(3000, function()
         deliverPending(src)
     end)
 end)
 
--- fallback: playerJoining สำหรับกรณี respawn ไม่ trigger
-AddEventHandler("playerJoining", function()
+-- fallback: playerDropped เพื่อ debug
+AddEventHandler("playerJoining", function(name)
     local src = source
-    SetTimeout(5000, function()
+    print("[amulet-shop] playerJoining src:" .. tostring(src) .. " name:" .. tostring(name))
+    SetTimeout(8000, function()
         deliverPending(src)
     end)
 end)
+
+-- test command: /shopdeliver ให้ admin สั่ง deliver ด้วยตัวเองได้
+RegisterCommand("shopdeliver", function(src, args, rawCommand)
+    print("[amulet-shop] Manual shopdeliver triggered by src:" .. tostring(src))
+    deliverPending(src)
+end, false)
 
 -- client event แจ้ง player
 RegisterNetEvent("amulet-shop:notify")
