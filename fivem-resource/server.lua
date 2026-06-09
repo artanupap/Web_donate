@@ -118,11 +118,20 @@ SetHttpHandler(function(req, res)
     res.send('{"success":true}')
 end)
 
--- ตอน player เข้าเกม — ส่ง pending items
-AddEventHandler("playerSpawned", function()
+-- ตอน player spawn (รับจาก client event) — ส่ง pending items
+RegisterNetEvent("amulet-shop:playerSpawned")
+AddEventHandler("amulet-shop:playerSpawned", function()
     local src = source
     -- หน่วงเล็กน้อยให้ player load เสร็จก่อน
     SetTimeout(3000, function()
+        deliverPending(src)
+    end)
+end)
+
+-- fallback: playerJoining สำหรับกรณี respawn ไม่ trigger
+AddEventHandler("playerJoining", function()
+    local src = source
+    SetTimeout(5000, function()
         deliverPending(src)
     end)
 end)

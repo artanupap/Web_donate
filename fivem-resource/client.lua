@@ -1,3 +1,8 @@
+-- แจ้ง server เมื่อ player spawn (เพื่อ deliver pending items)
+AddEventHandler("playerSpawned", function()
+    TriggerServerEvent("amulet-shop:playerSpawned")
+end)
+
 -- แจ้งเตือน player เมื่อได้รับไอเท็ม
 RegisterNetEvent("amulet-shop:notify")
 AddEventHandler("amulet-shop:notify", function(count, items)
