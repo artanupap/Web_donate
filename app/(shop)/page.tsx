@@ -17,17 +17,17 @@ export default async function HomePage() {
   return (
     <div className="space-y-16">
       {/* Hero */}
-      <section className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 border border-navy-700 p-12 text-center">
+      <section className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-navy-800 via-navy-900 to-navy-950 border border-navy-700 p-6 md:p-12 text-center">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/30 via-transparent to-transparent" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 bg-blue-900/40 border border-blue-700/50 rounded-full px-4 py-1.5 text-sm text-blue-300 mb-6">
             <Zap className="w-3.5 h-3.5" />
             ส่งไอเท็มเข้าเกมทันที
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-3">
             <span className="text-blue-500">Amulet</span> Shop
           </h1>
-          <p className="text-slate-400 text-lg mb-8 max-w-lg mx-auto">
+          <p className="text-slate-400 text-sm md:text-lg mb-6 max-w-lg mx-auto">
             ซื้อไอเท็ม อาวุธ ยานพาหนะ และอื่นๆ เพื่อรับในเกมได้ทันที
           </p>
           <Link href="/shop" className="btn-primary inline-flex items-center gap-2 text-base px-6 py-3">

@@ -21,7 +21,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto px-0">
       <h1 className="text-2xl font-bold text-white mb-6">ตะกร้าสินค้า</h1>
 
       <div className="space-y-3 mb-6">

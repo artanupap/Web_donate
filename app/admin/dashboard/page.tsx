@@ -40,7 +40,7 @@ export default async function AdminDashboard() {
     <div>
       <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
             <div className="flex items-start justify-between mb-3">
