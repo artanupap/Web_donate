@@ -14,64 +14,36 @@ end
 -- ส่งไอเท็ม pending ให้ player
 local function deliverPending(src)
     local discordId = getDiscordId(src)
-    print("[amulet-shop] deliverPending called — src:" .. tostring(src) .. " discordId:" .. tostring(discordId))
-    if not discordId then
-        print("[amulet-shop] ERROR: no discordId for src " .. tostring(src))
-        return
-    end
-
-    local url = SHOP_URL .. "/api/fivem/pending?discordId=" .. discordId
-    print("[amulet-shop] Fetching pending from: " .. url)
+    if not discordId then return end
 
     PerformHttpRequest(
-        url,
+        SHOP_URL .. "/api/fivem/pending?discordId=" .. discordId,
         function(status, body)
-            print("[amulet-shop] HTTP status: " .. tostring(status) .. " body: " .. tostring(body))
-            if status ~= 200 then
-                print("[amulet-shop] ERROR: HTTP " .. tostring(status))
-                return
-            end
+            if status ~= 200 then return end
 
             local data = json.decode(body)
-            if not data or not data.items then
-                print("[amulet-shop] ERROR: invalid JSON response")
-                return
-            end
-            if #data.items == 0 then
-                print("[amulet-shop] No pending items for " .. discordId)
-                return
-            end
-
-            print("[amulet-shop] Found " .. #data.items .. " pending item(s) for " .. discordId)
+            if not data or not data.items or #data.items == 0 then return end
 
             local delivered = {}
 
             for _, item in ipairs(data.items) do
-                print("[amulet-shop] Giving " .. item.itemName .. " x" .. tostring(item.amount) .. " to src " .. tostring(src))
                 local ok = exports.ox_inventory:AddItem(src, item.itemName, item.amount)
-                print("[amulet-shop] AddItem result: " .. tostring(ok))
                 if ok then
                     table.insert(delivered, item.id)
-                    print("[amulet-shop] SUCCESS: " .. item.itemName .. " x" .. item.amount .. " -> " .. discordId)
+                    print("[amulet-shop] Delivered " .. item.itemName .. " x" .. item.amount .. " to " .. discordId)
                 else
-                    print("[amulet-shop] FAILED: " .. item.itemName .. " -> " .. discordId)
+                    print("[amulet-shop] Failed to deliver " .. item.itemName .. " to " .. discordId)
                 end
             end
 
-            -- แจ้งเว็บว่าส่งแล้ว
             if #delivered > 0 then
-                print("[amulet-shop] Marking " .. #delivered .. " items as delivered")
                 PerformHttpRequest(
                     SHOP_URL .. "/api/fivem/pending",
-                    function(s, b)
-                        print("[amulet-shop] Mark delivered response: " .. tostring(s) .. " " .. tostring(b))
-                    end,
+                    function(s) end,
                     "POST",
                     json.encode({ ids = delivered }),
                     { ["Content-Type"] = "application/json", ["x-api-key"] = API_KEY }
                 )
-
-                -- แจ้ง player ในเกม
                 TriggerClientEvent("amulet-shop:notify", src, #delivered, data.items)
             end
         end,
@@ -144,26 +116,17 @@ end)
 RegisterNetEvent("amulet-shop:playerSpawned")
 AddEventHandler("amulet-shop:playerSpawned", function()
     local src = source
-    print("[amulet-shop] playerSpawned received from src:" .. tostring(src))
     SetTimeout(3000, function()
         deliverPending(src)
     end)
 end)
 
--- fallback: playerDropped เพื่อ debug
-AddEventHandler("playerJoining", function(name)
+AddEventHandler("playerJoining", function()
     local src = source
-    print("[amulet-shop] playerJoining src:" .. tostring(src) .. " name:" .. tostring(name))
     SetTimeout(8000, function()
         deliverPending(src)
     end)
 end)
-
--- test command: /shopdeliver ให้ admin สั่ง deliver ด้วยตัวเองได้
-RegisterCommand("shopdeliver", function(src, args, rawCommand)
-    print("[amulet-shop] Manual shopdeliver triggered by src:" .. tostring(src))
-    deliverPending(src)
-end, false)
 
 -- client event แจ้ง player
 RegisterNetEvent("amulet-shop:notify")
