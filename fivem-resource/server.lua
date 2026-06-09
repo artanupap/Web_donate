@@ -113,6 +113,7 @@ SetHttpHandler(function(req, res)
 end)
 
 -- ตอน player spawn (รับจาก client event) — ส่ง pending items
+-- รับจาก client (ถ้า framework support)
 RegisterNetEvent("amulet-shop:playerSpawned")
 AddEventHandler("amulet-shop:playerSpawned", function()
     local src = source
@@ -121,12 +122,22 @@ AddEventHandler("amulet-shop:playerSpawned", function()
     end)
 end)
 
+-- playerJoining fallback
 AddEventHandler("playerJoining", function()
     local src = source
     SetTimeout(8000, function()
         deliverPending(src)
     end)
 end)
+
+-- Polling ทุก 30 วินาที — deliver ให้ทุก player ที่ online
+local function pollAllPlayers()
+    for _, src in ipairs(GetPlayers()) do
+        deliverPending(tonumber(src))
+    end
+    SetTimeout(30000, pollAllPlayers)
+end
+SetTimeout(10000, pollAllPlayers)
 
 -- client event แจ้ง player
 RegisterNetEvent("amulet-shop:notify")
