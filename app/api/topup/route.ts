@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import crypto from "crypto";
 import { verifySlip } from "@/lib/slip2go";
 
 export async function POST(req: NextRequest) {
@@ -25,9 +26,18 @@ export async function POST(req: NextRequest) {
   const rate = parseInt(settingRaw?.value || "1");
   const points = amount * rate;
 
-  // บันทึกไฟล์สลิป
+  // อ่านไฟล์สลิป + คำนวณ hash กัน reuse
   const bytes = await slipFile.arrayBuffer();
   const buffer = Buffer.from(bytes);
+  const slipHash = crypto.createHash("sha256").update(buffer).digest("hex");
+
+  // เช็คสลิปซ้ำ (hash เดิม)
+  const dupHash = await prisma.topUpHistory.findUnique({ where: { slipHash } });
+  if (dupHash) {
+    return NextResponse.json({ error: "สลิปนี้ถูกใช้ไปแล้ว ไม่สามารถใช้ซ้ำได้" }, { status: 400 });
+  }
+
+  // บันทึกไฟล์สลิป
   const filename = `topup_${Date.now()}_${slipFile.name}`;
   const uploadDir = path.join(process.cwd(), "public", "uploads");
   await mkdir(uploadDir, { recursive: true });
@@ -36,6 +46,16 @@ export async function POST(req: NextRequest) {
 
   // ตรวจสอบสลิป (เก็บผลไว้ใน note แต่ approve เสมอ)
   const slipResult = await verifySlip(Buffer.from(bytes), filename);
+
+  // เช็ค transactionId ซ้ำ (ถ้า QR อ่านได้)
+  if (slipResult.transactionId) {
+    const dupTxn = await prisma.topUpHistory.findUnique({
+      where: { transactionId: slipResult.transactionId },
+    });
+    if (dupTxn) {
+      return NextResponse.json({ error: "สลิปนี้ถูกใช้ไปแล้ว (transaction ซ้ำ)" }, { status: 400 });
+    }
+  }
 
   const status = "approved"; // auto-approve เสมอ ไม่รอแอดมิน
   let autoNote = "";
@@ -54,6 +74,8 @@ export async function POST(req: NextRequest) {
       amount,
       points,
       slipImage: slipPath,
+      slipHash,
+      transactionId: slipResult.transactionId || null,
       status,
       note: autoNote,
     },
