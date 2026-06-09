@@ -29,20 +29,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       amount: i.quantity * i.itemAmount,
     }));
 
-    const result = await deliverItemsToPlayer(order.user.discordId, items);
+    const result = await deliverItemsToPlayer(order.user.discordId, order.id, items);
 
-    if (result.success) {
-      await prisma.order.update({
-        where: { id: params.id },
-        data: { status: "delivered", fivemSent: true },
-      });
-      return NextResponse.json({ message: "ส่งไอเท็มสำเร็จ" });
-    } else {
-      return NextResponse.json(
-        { error: `ส่งไม่สำเร็จ: ${result.message}` },
-        { status: 500 }
-      );
-    }
+    await prisma.order.update({
+      where: { id: params.id },
+      data: {
+        status: result.queued ? "approved" : "delivered",
+        fivemSent: !result.queued,
+      },
+    });
+    return NextResponse.json({
+      message: result.queued
+        ? "บันทึก queue แล้ว ส่งเมื่อ player เข้าเกม"
+        : "ส่งไอเท็มสำเร็จ",
+    });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

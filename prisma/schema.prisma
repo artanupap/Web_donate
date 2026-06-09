@@ -129,3 +129,14 @@ model SiteSetting {
   key   String @id
   value String
 }
+
+model PendingDelivery {
+  id         String   @id @default(cuid())
+  discordId  String
+  orderId    String
+  itemName   String
+  amount     Int
+  delivered  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  deliveredAt DateTime?
+}

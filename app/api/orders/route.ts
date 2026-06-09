@@ -121,25 +121,21 @@ export async function POST(req: NextRequest) {
       itemName: i.itemName,
       amount: i.quantity * i.itemAmount,
     }));
-    const result = await deliverItemsToPlayer(dbUser.discordId, deliverItems);
-    if (result.success) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: "delivered", fivemSent: true },
-      });
-      return NextResponse.json({
-        success: true,
-        autoDelivered: true,
-        orderId: order.id,
-        message: "ชำระเงินสำเร็จ! ไอเท็มถูกส่งเข้าเกมแล้ว",
-      });
-    }
-    // ส่งเข้าเกมไม่สำเร็จ (อาจออฟไลน์) — ยังคง approved รอแอดมินส่งซ้ำ
+    const result = await deliverItemsToPlayer(dbUser.discordId, order.id, deliverItems);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: result.queued ? "approved" : "delivered",
+        fivemSent: !result.queued,
+      },
+    });
     return NextResponse.json({
       success: true,
-      autoDelivered: false,
+      autoDelivered: !result.queued,
       orderId: order.id,
-      message: "ชำระเงินสำเร็จ! รอส่งไอเท็มเข้าเกม (กรุณาออนไลน์ในเกม)",
+      message: result.queued
+        ? "ชำระสำเร็จ! ไอเท็มจะส่งเข้าเกมอัตโนมัติเมื่อคุณเข้าเกม"
+        : "ชำระสำเร็จ! ไอเท็มถูกส่งเข้าเกมแล้ว",
     });
   }
 

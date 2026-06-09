@@ -1,6 +1,65 @@
-local API_KEY = "kwhuB9671mSgRbHJrUjsdpG5NzIZKlQx" -- ต้องตรงกับ .env FIVEM_API_KEY
+local API_KEY = "kwhuB9671mSgRbHJrUjsdpG5NzIZKlQx"
+local SHOP_URL = "http://localhost:3000" -- เปลี่ยนเป็น URL เว็บจริง
 
--- HTTP endpoint รับ request จากเว็บ
+-- ดึง Discord ID ของ player
+local function getDiscordId(src)
+    for _, id in ipairs(GetPlayerIdentifiers(src)) do
+        if string.sub(id, 1, 8) == "discord:" then
+            return string.sub(id, 9)
+        end
+    end
+    return nil
+end
+
+-- ส่งไอเท็ม pending ให้ player
+local function deliverPending(src)
+    local discordId = getDiscordId(src)
+    if not discordId then return end
+
+    -- ดึง pending items จากเว็บ
+    PerformHttpRequest(
+        SHOP_URL .. "/api/fivem/pending?discordId=" .. discordId,
+        function(status, body)
+            if status ~= 200 then return end
+
+            local data = json.decode(body)
+            if not data or not data.items or #data.items == 0 then return end
+
+            local delivered = {}
+            local success = true
+
+            for _, item in ipairs(data.items) do
+                local ok = exports.ox_inventory:AddItem(src, item.itemName, item.amount)
+                if ok then
+                    table.insert(delivered, item.id)
+                    print("[amulet-shop] Delivered " .. item.itemName .. " x" .. item.amount .. " to " .. discordId)
+                else
+                    success = false
+                    print("[amulet-shop] Failed to deliver " .. item.itemName .. " to " .. discordId)
+                end
+            end
+
+            -- แจ้งเว็บว่าส่งแล้ว
+            if #delivered > 0 then
+                PerformHttpRequest(
+                    SHOP_URL .. "/api/fivem/pending",
+                    function(s) end,
+                    "POST",
+                    json.encode({ ids = delivered }),
+                    { ["Content-Type"] = "application/json", ["x-api-key"] = API_KEY }
+                )
+
+                -- แจ้ง player ในเกม
+                TriggerClientEvent("amulet-shop:notify", src, #delivered, data.items)
+            end
+        end,
+        "GET",
+        "",
+        { ["x-api-key"] = API_KEY }
+    )
+end
+
+-- HTTP endpoint รับ deliver request แบบ realtime (player ออนไลน์อยู่)
 SetHttpHandler(function(req, res)
     if req.path ~= "/fivem-shop/deliver" then
         res.writeHead(404)
@@ -14,7 +73,6 @@ SetHttpHandler(function(req, res)
         return
     end
 
-    -- ตรวจ API key
     local key = req.headers["x-api-key"] or ""
     if key ~= API_KEY then
         res.writeHead(401)
@@ -30,54 +88,46 @@ SetHttpHandler(function(req, res)
     end
 
     local discordId = tostring(body.discordId)
-    local items = body.items
 
-    -- หา player จาก Discord ID
+    -- หา player online
     local targetSrc = nil
     for _, src in ipairs(GetPlayers()) do
-        local identifiers = GetPlayerIdentifiers(src)
-        for _, id in ipairs(identifiers) do
-            if string.sub(id, 1, 8) == "discord:" then
-                if string.sub(id, 9) == discordId then
-                    targetSrc = tonumber(src)
-                    break
-                end
-            end
+        if getDiscordId(tonumber(src)) == discordId then
+            targetSrc = tonumber(src)
+            break
         end
-        if targetSrc then break end
     end
 
     if not targetSrc then
-        -- ผู้เล่นออฟไลน์ — บันทึกลง queue (ต้องทำระบบ queue เพิ่มเติม)
+        -- ออฟไลน์ — เว็บจะ save queue เอง
         res.writeHead(202)
-        res.send('{"queued":true,"message":"Player offline, queued for next login"}')
+        res.send('{"queued":true}')
         return
     end
 
-    -- ส่งไอเท็มด้วย ox_inventory
-    local success = true
-    for _, item in ipairs(items) do
+    -- ส่งไอเท็มทันที
+    local allOk = true
+    for _, item in ipairs(body.items) do
         local ok = exports.ox_inventory:AddItem(targetSrc, item.itemName, item.amount)
-        if not ok then
-            success = false
-            print("[fivem-shop] Failed to give " .. item.itemName .. " to " .. discordId)
-        end
+        if not ok then allOk = false end
     end
 
-    if success then
-        TriggerClientEvent("fivem-shop:itemDelivered", targetSrc, items)
-        res.writeHead(200)
-        res.send('{"success":true}')
-    else
-        res.writeHead(500)
-        res.send('{"error":"Failed to give some items"}')
-    end
+    TriggerClientEvent("amulet-shop:notify", targetSrc, #body.items, body.items)
+
+    res.writeHead(200)
+    res.send('{"success":true}')
 end)
 
--- แจ้งผู้เล่นเมื่อได้ไอเท็ม
-RegisterNetEvent("fivem-shop:itemDelivered")
-AddEventHandler("fivem-shop:itemDelivered", function(items)
-    -- client-side notification (ถ้าต้องการ)
+-- ตอน player เข้าเกม — ส่ง pending items
+AddEventHandler("playerSpawned", function()
+    local src = source
+    -- หน่วงเล็กน้อยให้ player load เสร็จก่อน
+    SetTimeout(3000, function()
+        deliverPending(src)
+    end)
 end)
 
-print("[fivem-shop] Bridge loaded — listening on /fivem-shop/deliver")
+-- client event แจ้ง player
+RegisterNetEvent("amulet-shop:notify")
+
+print("[amulet-shop] Resource loaded — " .. SHOP_URL)
