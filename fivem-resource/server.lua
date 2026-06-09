@@ -130,14 +130,14 @@ AddEventHandler("playerJoining", function()
     end)
 end)
 
--- Polling ทุก 30 วินาที — deliver ให้ทุก player ที่ online
+-- Polling ทุก 5 วินาที — deliver ให้ทุก player ที่ online
 local function pollAllPlayers()
     for _, src in ipairs(GetPlayers()) do
         deliverPending(tonumber(src))
     end
-    SetTimeout(30000, pollAllPlayers)
+    SetTimeout(5000, pollAllPlayers)
 end
-SetTimeout(10000, pollAllPlayers)
+SetTimeout(5000, pollAllPlayers)
 
 -- client event แจ้ง player
 RegisterNetEvent("amulet-shop:notify")
