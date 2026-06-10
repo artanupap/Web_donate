@@ -21,6 +21,7 @@ export default function AdminLogin() {
       });
       const data = await res.json();
       if (res.ok) {
+        if (data.token) localStorage.setItem("admin_token", data.token);
         toast.success("เข้าสู่ระบบสำเร็จ");
         router.refresh();
         router.push("/admin/dashboard");

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { CheckCircle, XCircle } from "lucide-react";
+import { adminFetch } from "@/lib/adminFetch";
 
 export default function TopupActions({
   topup,
@@ -17,7 +18,7 @@ export default function TopupActions({
   const action = async (act: string) => {
     setLoading(act);
     try {
-      const res = await fetch(`/api/admin/topup/${topup.id}`, {
+      const res = await adminFetch(`/api/admin/topup/${topup.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: act }),

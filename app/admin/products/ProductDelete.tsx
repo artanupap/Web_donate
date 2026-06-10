@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { adminFetch } from "@/lib/adminFetch";
 
 export default function ProductDelete({ id }: { id: string }) {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function ProductDelete({ id }: { id: string }) {
     if (!confirm("ลบสินค้านี้?")) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/products/${id}`, { method: "DELETE" });
       if (res.ok) {
         toast.success("ลบแล้ว");
         router.refresh();

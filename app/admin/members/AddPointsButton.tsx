@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { PlusCircle, X } from "lucide-react";
+import { adminFetch } from "@/lib/adminFetch";
 
 export default function AddPointsButton({
   userId,
@@ -25,7 +26,7 @@ export default function AddPointsButton({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/members/${userId}/points`, {
+      const res = await adminFetch(`/api/admin/members/${userId}/points`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: pts, reason: reason || "แอดมินเพิ่มพ้อย" }),
@@ -94,11 +95,7 @@ export default function AddPointsButton({
             </div>
 
             <div className="flex gap-2 mt-4">
-              <button
-                onClick={submit}
-                disabled={loading}
-                className="btn-primary flex-1"
-              >
+              <button onClick={submit} disabled={loading} className="btn-primary flex-1">
                 {loading ? "กำลังบันทึก..." : "ยืนยัน"}
               </button>
               <button onClick={() => setOpen(false)} className="btn-ghost">ยกเลิก</button>

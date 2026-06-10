@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Plus, Trash2 } from "lucide-react";
+import { adminFetch } from "@/lib/adminFetch";
 
 interface Category { id: string; name: string; _count?: { products: number }; }
 
@@ -11,7 +12,7 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
-    const res = await fetch("/api/admin/categories");
+    const res = await adminFetch("/api/admin/categories");
     if (res.ok) setCats(await res.json());
   };
 
@@ -21,7 +22,7 @@ export default function CategoriesPage() {
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
-    const res = await fetch("/api/admin/categories", {
+    const res = await adminFetch("/api/admin/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -33,7 +34,7 @@ export default function CategoriesPage() {
 
   const del = async (id: string) => {
     if (!confirm("ลบหมวดนี้?")) return;
-    const res = await fetch(`/api/admin/categories/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/admin/categories/${id}`, { method: "DELETE" });
     if (res.ok) { toast.success("ลบแล้ว"); load(); }
     else toast.error("เกิดข้อผิดพลาด");
   };
@@ -43,12 +44,7 @@ export default function CategoriesPage() {
       <h1 className="text-2xl font-bold text-white mb-6">หมวดหมู่</h1>
 
       <form onSubmit={add} className="flex gap-2 mb-6">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="input max-w-xs text-sm"
-          placeholder="ชื่อหมวดหมู่"
-        />
+        <input value={name} onChange={(e) => setName(e.target.value)} className="input max-w-xs text-sm" placeholder="ชื่อหมวดหมู่" />
         <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" /> เพิ่ม
         </button>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { CheckCircle, XCircle, Send } from "lucide-react";
+import { adminFetch } from "@/lib/adminFetch";
 
 interface Props {
   order: {
@@ -21,7 +22,7 @@ export default function OrderActions({ order }: Props) {
   const action = async (act: string) => {
     setLoading(act);
     try {
-      const res = await fetch(`/api/admin/orders/${order.id}`, {
+      const res = await adminFetch(`/api/admin/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: act }),

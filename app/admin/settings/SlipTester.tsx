@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Upload, CheckCircle, XCircle } from "lucide-react";
+import { adminFetch } from "@/lib/adminFetch";
 
 export default function SlipTester() {
   const [file, setFile] = useState<File | null>(null);
@@ -15,7 +16,7 @@ export default function SlipTester() {
     setResult(null);
     const form = new FormData();
     form.append("slip", file);
-    const res = await fetch("/api/admin/verify-slip-test", { method: "POST", body: form });
+    const res = await adminFetch("/api/admin/verify-slip-test", { method: "POST", body: form });
     setResult(await res.json());
     setLoading(false);
   };
@@ -49,21 +50,13 @@ export default function SlipTester() {
       </button>
 
       {result && (
-        <div className={`mt-4 p-4 rounded-xl border text-sm ${
-          result.verified
-            ? "bg-green-900/20 border-green-800"
-            : "bg-red-900/20 border-red-800"
-        }`}>
+        <div className={`mt-4 p-4 rounded-xl border text-sm ${result.verified ? "bg-green-900/20 border-green-800" : "bg-red-900/20 border-red-800"}`}>
           <div className="flex items-center gap-2 mb-3">
-            {result.verified
-              ? <CheckCircle className="w-5 h-5 text-green-400" />
-              : <XCircle className="w-5 h-5 text-red-400" />
-            }
+            {result.verified ? <CheckCircle className="w-5 h-5 text-green-400" /> : <XCircle className="w-5 h-5 text-red-400" />}
             <span className={`font-semibold ${result.verified ? "text-green-300" : "text-red-300"}`}>
               {result.verified ? "อ่านสลิปสำเร็จ" : "อ่านสลิปไม่ได้"}
             </span>
           </div>
-
           {result.verified && (
             <div className="space-y-1 text-slate-300">
               {result.amount && <p>ยอดเงิน: <span className="text-yellow-300 font-bold">฿{result.amount.toLocaleString()}</span></p>}
@@ -73,9 +66,7 @@ export default function SlipTester() {
               {result.date && <p>วันที่: {result.date}</p>}
             </div>
           )}
-
           {result.error && <p className="text-red-300 text-xs mt-1">{result.error}</p>}
-
           {result.rawQR && (
             <details className="mt-2">
               <summary className="text-xs text-slate-500 cursor-pointer">Raw QR data</summary>

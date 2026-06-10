@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
 
   const token = signAdminToken(admin.id, admin.username);
 
-  const res = NextResponse.json({ success: true });
+  const res = NextResponse.json({ success: true, token });
   res.cookies.set("admin_token", token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: false,
     sameSite: "lax",
     maxAge: 60 * 60 * 8,

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { adminFetch } from "@/lib/adminFetch";
 
 export default function ProductToggle({ id, active }: { id: string; active: boolean }) {
   const [val, setVal] = useState(active);
@@ -10,7 +11,7 @@ export default function ProductToggle({ id, active }: { id: string; active: bool
   const toggle = async () => {
     const next = !val;
     setVal(next);
-    const res = await fetch(`/api/admin/products/${id}`, {
+    const res = await adminFetch(`/api/admin/products/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: next }),

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import SlipTester from "./SlipTester";
+import { adminFetch } from "@/lib/adminFetch";
 
 interface Setting { key: string; value: string; }
 
@@ -22,7 +23,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/settings")
+    adminFetch("/api/admin/settings")
       .then((r) => r.json())
       .then((data) => {
         setSettings(data);
@@ -35,7 +36,7 @@ export default function SettingsPage() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch("/api/admin/settings", {
+    const res = await adminFetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),

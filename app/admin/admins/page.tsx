@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Shield } from "lucide-react";
+import { adminFetch } from "@/lib/adminFetch";
 
 interface Admin { id: string; username: string; createdAt: string; }
 
@@ -12,7 +13,7 @@ export default function AdminsPage() {
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
-    const res = await fetch("/api/admin/admins");
+    const res = await adminFetch("/api/admin/admins");
     if (res.ok) setAdmins(await res.json());
   };
 
@@ -23,7 +24,7 @@ export default function AdminsPage() {
     if (!username.trim() || !password.trim()) return;
     if (password.length < 6) { toast.error("รหัสผ่านขั้นต่ำ 6 ตัวอักษร"); return; }
     setLoading(true);
-    const res = await fetch("/api/admin/admins", {
+    const res = await adminFetch("/api/admin/admins", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
@@ -40,7 +41,7 @@ export default function AdminsPage() {
 
   const del = async (id: string, name: string) => {
     if (!confirm(`ลบแอดมิน "${name}" ?`)) return;
-    const res = await fetch(`/api/admin/admins/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/admin/admins/${id}`, { method: "DELETE" });
     if (res.ok) { toast.success("ลบแล้ว"); load(); }
     else {
       const data = await res.json();
@@ -52,30 +53,15 @@ export default function AdminsPage() {
     <div className="max-w-xl">
       <h1 className="text-2xl font-bold text-white mb-6">จัดการแอดมิน</h1>
 
-      {/* เพิ่มแอดมิน */}
       <form onSubmit={add} className="card p-5 mb-6 space-y-3">
         <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wide">เพิ่มแอดมินใหม่</h2>
         <div>
           <label className="block text-sm text-slate-400 mb-1.5">Username</label>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="input"
-            placeholder="username"
-            required
-          />
+          <input value={username} onChange={(e) => setUsername(e.target.value)} className="input" placeholder="username" required />
         </div>
         <div>
           <label className="block text-sm text-slate-400 mb-1.5">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="input"
-            placeholder="ขั้นต่ำ 6 ตัวอักษร"
-            required
-            minLength={6}
-          />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" placeholder="ขั้นต่ำ 6 ตัวอักษร" required minLength={6} />
         </div>
         <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" />
@@ -83,7 +69,6 @@ export default function AdminsPage() {
         </button>
       </form>
 
-      {/* รายชื่อแอดมิน */}
       <div className="card divide-y divide-navy-700">
         {admins.length === 0 && <p className="p-8 text-center text-slate-500">ไม่มีข้อมูล</p>}
         {admins.map((a) => (
@@ -94,16 +79,10 @@ export default function AdminsPage() {
               </div>
               <div>
                 <p className="font-medium text-white text-sm">{a.username}</p>
-                <p className="text-xs text-slate-600">
-                  {new Date(a.createdAt).toLocaleDateString("th-TH")}
-                </p>
+                <p className="text-xs text-slate-600">{new Date(a.createdAt).toLocaleDateString("th-TH")}</p>
               </div>
             </div>
-            <button
-              onClick={() => del(a.id, a.username)}
-              className="p-2 hover:bg-red-900/30 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
-              title="ลบแอดมิน"
-            >
+            <button onClick={() => del(a.id, a.username)} className="p-2 hover:bg-red-900/30 rounded-lg text-slate-500 hover:text-red-400 transition-colors">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>

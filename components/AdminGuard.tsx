@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { adminFetch } from "@/lib/adminFetch";
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (pathname === "/admin/login") { setOk(true); setChecked(true); return; }
     if (ok) { setChecked(true); return; }
-    fetch("/api/admin/auth/me")
+    adminFetch("/api/admin/auth/me")
       .then((r) => {
         if (r.ok) { setOk(true); }
         else router.replace("/admin/login");

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { adminFetch } from "@/lib/adminFetch";
 import { Upload } from "lucide-react";
 import Image from "next/image";
 
@@ -69,7 +70,7 @@ export default function ProductForm({
 
       const url = isEdit ? `/api/admin/products/${product!.id}` : "/api/admin/products";
       const method = isEdit ? "PUT" : "POST";
-      const res = await fetch(url, { method, body: fd });
+      const res = await adminFetch(url, { method, body: fd });
       const data = await res.json();
 
       if (res.ok) {
