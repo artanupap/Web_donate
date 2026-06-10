@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
 import ProductToggle from "./ProductToggle";
+import ProductDelete from "./ProductDelete";
 
 export default async function ProductsPage() {
   const products = await prisma.product.findMany({
@@ -46,6 +47,7 @@ export default async function ProductsPage() {
             >
               <Pencil className="w-4 h-4" />
             </Link>
+            <ProductDelete id={p.id} />
           </div>
         ))}
       </div>
