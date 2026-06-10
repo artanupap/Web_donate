@@ -22,6 +22,7 @@ export default function AdminLogin() {
       const data = await res.json();
       if (res.ok) {
         toast.success("เข้าสู่ระบบสำเร็จ");
+        router.refresh();
         router.push("/admin/dashboard");
       } else {
         toast.error(data.error || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
